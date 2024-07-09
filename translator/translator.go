@@ -68,13 +68,18 @@ func (t *Translator) TranslateText() error {
 	return nil
 }
 
+var regexPattern *regexp.Regexp
+
 func (t *Translator) translateLine(text string) (string, error) {
 	translatedText := text
 
 	for _, translationConfig := range t.config.Translations {
-		regexPattern, err := regexp.Compile(translationConfig.Pattern)
-		if err != nil {
-			return "", err
+		if regexPattern == nil {
+			var err error
+			regexPattern, err = regexp.Compile(translationConfig.Pattern)
+			if err != nil {
+				return "", err
+			}
 		}
 
 		matches := regexPattern.FindAllStringSubmatchIndex(translatedText, -1)
