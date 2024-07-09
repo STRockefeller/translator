@@ -1,6 +1,7 @@
 package translator
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -55,6 +56,10 @@ func (t *Translator) TranslateText() error {
 
 		if err := utils.SaveProgress(t.progressPath, t.progress); err != nil {
 			return err
+		}
+		// show progress
+		if l := len(t.progress.RemainingLines); l%100 == 0 {
+			fmt.Println("remaining lines:", l)
 		}
 	}
 
