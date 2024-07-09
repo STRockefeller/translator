@@ -72,8 +72,8 @@ func (n *NiuTransTranslator) Translate(text, sourceLang, targetLang string) (str
 }
 
 func (n *NiuTransTranslator) CanRetry(err error) bool {
-	if strings.Contains(err.Error(), "QPS limit exceeded") ||
-		strings.Contains(err.Error(), "request timeout") {
+	if strings.Contains(err.Error(), "QPS") ||
+		strings.Contains(err.Error(), "timeout") {
 		return true
 	}
 	return false
