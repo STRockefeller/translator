@@ -8,6 +8,7 @@ This tool uses multiple translation APIs (including DeepL and NiuTrans) to trans
 2. **Multiple API Support**: Configurable with multiple API keys, including DeepL and NiuTrans, and automatically switches keys when quota is exceeded.
 3. **Progress Saving**: Automatically saves translation progress to ensure continuity after interruptions.
 4. **Error Retrying**: Automatically retries translatable errors after a specified delay.
+5. **Regex-based Segment Translation**: Allows users to specify which parts of the text should be translated using regular expressions, while keeping other parts unchanged.
 
 ## Configuration File (config.json)
 
@@ -26,7 +27,13 @@ Example `config.json` file:
     "SourceLang": "en",
     "TargetLang": "zh",
     "InputFilePath": "input.txt",
-    "OutputFilePath": "output.txt"
+    "OutputFilePath": "output.txt",
+    "Translations": [
+        {
+            "Pattern": ":\\s*\"([^\"]+)\"",
+            "TranslateGroups": [1]
+        }
+    ]
 }
 ```
 
@@ -39,6 +46,9 @@ Example `config.json` file:
 - `TargetLang`: Target language.
 - `InputFilePath`: Path to the input file.
 - `OutputFilePath`: Path to the output file.
+- `Translations`: List of translation configurations.
+    - `Pattern`: Regular expression pattern to match text segments.
+    - `TranslateGroups`: List of capture group indices that should be translated.
 
 ## Usage
 
@@ -58,9 +68,11 @@ Command line arguments can override the settings in the configuration file:
 
 Assume we have a file named `input.txt` with the following content:
 
-```
-Hello, how are you?
-This is a test.
+```json
+{
+    "Hello":"Hello",
+    "World":"World"
+}
 ```
 
 We can translate it using the following command:
@@ -68,6 +80,32 @@ We can translate it using the following command:
 ```sh
 go run main.go -source en -target zh -input input.txt -output output.txt
 ```
+
+After translation, the `output.txt` will contain:
+
+```json
+{
+    "Hello":"你好",
+    "World":"世界"
+}
+```
+
+### Regex-based Segment Translation
+
+You can define which parts of the text should be translated using regular expressions in the `config.json` file. For example, the following configuration:
+
+```json
+{
+    "Translations": [
+        {
+            "Pattern": "\"([^\"]+)\":\"([^\"]+)\"",
+            "TranslateGroups": [2]
+        }
+    ]
+}
+```
+
+In this example, the regular expression pattern matches JSON key-value pairs, and only the values (second capture group) are translated. The keys (first capture group) remain unchanged.
 
 ### Progress Saving
 

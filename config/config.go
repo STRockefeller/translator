@@ -13,11 +13,17 @@ type Config struct {
 	TargetLang     string
 	InputFilePath  string
 	OutputFilePath string
+	Translations   []TranslationConfig
 }
 
 type APIKeys struct {
 	NiuTrans []string
 	Deepl    []string
+}
+
+type TranslationConfig struct {
+	Pattern         string
+	TranslateGroups []int
 }
 
 func LoadConfig(filepath string) (*Config, error) {

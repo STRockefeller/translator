@@ -1,7 +1,6 @@
 package translator
 
 import (
-	"os"
 	"testing"
 	"translator/api"
 	"translator/config"
@@ -37,10 +36,5 @@ func TestTranslator_TranslateText(t *testing.T) {
 
 	if len(translator.GetProgress().CompletedLines) != 2 {
 		t.Fatalf("Expected 2 completed lines, got %d", len(translator.GetProgress().CompletedLines))
-	}
-
-	// remove progress_test.json
-	if err := os.Remove(progressPath); err != nil {
-		t.Fatalf("Expected no error, got %v", err)
 	}
 }

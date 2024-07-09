@@ -1,6 +1,9 @@
 package translator
 
 import (
+	"os"
+	"regexp"
+	"strings"
 	"time"
 	"translator/api"
 	"translator/config"
@@ -32,9 +35,19 @@ func NewTranslator(apis []api.TranslatorAPI, config *config.Config, progressPath
 func (t *Translator) TranslateText() error {
 	for len(t.progress.RemainingLines) > 0 {
 		currentLine := t.progress.RemainingLines[0]
-		translatedText, err := t.translateLine(currentLine)
-		if err != nil {
-			return err
+		var translatedText string
+		if len(t.config.Translations) > 0 {
+			var err error
+			translatedText, err = t.translateLine(currentLine)
+			if err != nil {
+				return err
+			}
+		} else {
+			var err error
+			translatedText, err = t.translateFragment(currentLine)
+			if err != nil {
+				return err
+			}
 		}
 
 		t.progress.CompletedLines = append(t.progress.CompletedLines, translatedText)
@@ -45,15 +58,61 @@ func (t *Translator) TranslateText() error {
 		}
 	}
 
+	// delete progress file if there is no error
+	os.Remove(t.progressPath)
 	return nil
 }
 
 func (t *Translator) translateLine(text string) (string, error) {
+	translatedText := text
+
+	for _, translationConfig := range t.config.Translations {
+		regexPattern, err := regexp.Compile(translationConfig.Pattern)
+		if err != nil {
+			return "", err
+		}
+
+		matches := regexPattern.FindAllStringSubmatchIndex(translatedText, -1)
+		if matches == nil {
+			continue
+		}
+
+		for _, match := range matches {
+			original := translatedText[match[0]:match[1]]
+			translatedParts := make([]string, len(match)/2)
+
+			for i := 0; i < len(match)/2; i++ {
+				translatedParts[i] = translatedText[match[2*i]:match[2*i+1]]
+			}
+
+			for _, groupIndex := range translationConfig.TranslateGroups {
+				if groupIndex < len(translatedParts) {
+					translatedFragment, err := t.translateFragment(translatedParts[groupIndex])
+					if err != nil {
+						return "", err
+					}
+					translatedParts[groupIndex] = translatedFragment
+				}
+			}
+
+			translatedPair := original
+			for i, part := range translatedParts {
+				translatedPair = strings.Replace(translatedPair, translatedText[match[2*i]:match[2*i+1]], part, 1)
+			}
+
+			translatedText = strings.Replace(translatedText, original, translatedPair, 1)
+		}
+	}
+
+	return translatedText, nil
+}
+
+func (t *Translator) translateFragment(fragment string) (string, error) {
 	var translatedText string
 	var err error
 
 	for retries := 0; retries < t.config.MaxRetries; retries++ {
-		translatedText, err = t.apis[t.apiIndex].Translate(text, t.config.SourceLang, t.config.TargetLang)
+		translatedText, err = t.apis[t.apiIndex].Translate(fragment, t.config.SourceLang, t.config.TargetLang)
 		if err == nil {
 			return translatedText, nil
 		}

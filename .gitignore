@@ -25,3 +25,4 @@ assets
 examples
 *.log
 .vscode
+progress.json
