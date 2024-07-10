@@ -26,7 +26,7 @@ func (n *NiuTransTranslator) Translate(text, sourceLang, targetLang string) (str
 	params.Add("from", sourceLang)
 	params.Add("to", targetLang)
 	params.Add("apikey", n.apiKey)
-	params.Add("src_text", url.QueryEscape(text))
+	params.Add("src_text", text)
 
 	// Determine whether to use GET or POST based on text length
 	var resp *http.Response
