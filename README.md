@@ -9,6 +9,7 @@ This tool uses multiple translation APIs (including DeepL and NiuTrans) to trans
 3. **Progress Saving**: Automatically saves translation progress to ensure continuity after interruptions.
 4. **Error Retrying**: Automatically retries translatable errors after a specified delay.
 5. **Regex-based Segment Translation**: Allows users to specify which parts of the text should be translated using regular expressions, while keeping other parts unchanged.
+6. **Conditional Translation**: Allows users to specify conditions to include or exclude lines from being translated based on regular expressions.
 
 ## Configuration File (config.json)
 
@@ -24,16 +25,16 @@ Example `config.json` file:
     },
     "RetryDelay": 5,
     "MaxRetries": 3,
-    "SourceLang": "en",
-    "TargetLang": "zh",
+    "SourceLang": "fr",
+    "TargetLang": "en",
     "InputFilePath": "input.txt",
     "OutputFilePath": "output.txt",
-    "Translations": [
-        {
-            "Pattern": ":\\s*\"([^\"]+)\"",
-            "TranslateGroups": [1]
-        }
-    ]
+    "Translations": {
+        "Pattern": "bon par\\.(.*)",
+        "TranslateGroups": [1],
+        "IncludeCondition": ".*",
+        "ExcludeCondition": ".*Monde.*"
+    }
 }
 ```
 
@@ -49,6 +50,8 @@ Example `config.json` file:
 - `Translations`: List of translation configurations.
     - `Pattern`: Regular expression pattern to match text segments.
     - `TranslateGroups`: List of capture group indices that should be translated.
+    - `IncludeCondition`: Regular expression to specify lines that should be translated.
+    - `ExcludeCondition`: Regular expression to specify lines that should not be translated.
 
 ## Usage
 
@@ -66,28 +69,29 @@ Command line arguments can override the settings in the configuration file:
 
 ### Example
 
-Assume we have a file named `input.txt` with the following content:
+Assume we have a file named `input.txt` with the following content in French:
 
-```json
-{
-    "Hello":"Hello",
-    "World":"World"
-}
+```txt
+Bonjour tout le monde.
+bon par.Comment ça va?
+bon pars
+Ceci est un test.
+Monde entier.
 ```
 
 We can translate it using the following command:
 
 ```sh
-go run main.go -source en -target zh -input input.txt -output output.txt
+go run main.go -source fr -target en -input input.txt -output output.txt
 ```
 
 After translation, the `output.txt` will contain:
 
-```json
-{
-    "Hello":"你好",
-    "World":"世界"
-}
+```txt
+Bonjour tout le monde.
+bon par.How are you?
+Ceci est un test.
+Monde entier.
 ```
 
 ### Regex-based Segment Translation
@@ -98,14 +102,16 @@ You can define which parts of the text should be translated using regular expres
 {
     "Translations": [
         {
-            "Pattern": "\"([^\"]+)\":\"([^\"]+)\"",
-            "TranslateGroups": [2]
+            "Pattern": "(Bonjour|Comment ça va?)",
+            "TranslateGroups": [1],
+            "IncludeCondition": ".*",
+            "ExcludeCondition": ".*Monde.*"
         }
     ]
 }
 ```
 
-In this example, the regular expression pattern matches JSON key-value pairs, and only the values (second capture group) are translated. The keys (first capture group) remain unchanged.
+In this example, the regular expression pattern matches specific French phrases ("Bonjour" and "Comment ça va?"), and only these phrases are translated. The lines containing "Monde" will be excluded from translation.
 
 ### Progress Saving
 

@@ -6,14 +6,14 @@ import (
 )
 
 type Config struct {
-	ApiKeys        APIKeys
-	RetryDelay     int
-	MaxRetries     int
-	SourceLang     string
-	TargetLang     string
-	InputFilePath  string
-	OutputFilePath string
-	Translations   []TranslationConfig
+	ApiKeys           APIKeys
+	RetryDelay        int
+	MaxRetries        int
+	SourceLang        string
+	TargetLang        string
+	InputFilePath     string
+	OutputFilePath    string
+	TranslationConfig TranslationConfig
 }
 
 type APIKeys struct {
@@ -22,8 +22,10 @@ type APIKeys struct {
 }
 
 type TranslationConfig struct {
-	Pattern         string
-	TranslateGroups []int
+	Pattern          string
+	TranslateGroups  []int
+	IncludeCondition string
+	ExcludeCondition string
 }
 
 func LoadConfig(filepath string) (*Config, error) {

@@ -17,6 +17,9 @@ type Translator struct {
 	apiIndex     int
 	progress     *utils.Progress
 	progressPath string
+	regexPattern *regexp.Regexp
+	includeRegex *regexp.Regexp
+	excludeRegex *regexp.Regexp
 }
 
 func NewTranslator(apis []api.TranslatorAPI, config *config.Config, progressPath string) (*Translator, error) {
@@ -25,11 +28,33 @@ func NewTranslator(apis []api.TranslatorAPI, config *config.Config, progressPath
 		return nil, err
 	}
 
+	regexPattern, err := regexp.Compile(config.TranslationConfig.Pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	var includeRegex, excludeRegex *regexp.Regexp
+	if config.TranslationConfig.IncludeCondition != "" {
+		includeRegex, err = regexp.Compile(config.TranslationConfig.IncludeCondition)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if config.TranslationConfig.ExcludeCondition != "" {
+		excludeRegex, err = regexp.Compile(config.TranslationConfig.ExcludeCondition)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &Translator{
 		apis:         apis,
 		config:       config,
 		progress:     progress,
 		progressPath: progressPath,
+		regexPattern: regexPattern,
+		includeRegex: includeRegex,
+		excludeRegex: excludeRegex,
 	}, nil
 }
 
@@ -37,7 +62,7 @@ func (t *Translator) TranslateText() error {
 	for len(t.progress.RemainingLines) > 0 {
 		currentLine := t.progress.RemainingLines[0]
 		var translatedText string
-		if len(t.config.Translations) > 0 {
+		if t.regexPattern != nil {
 			var err error
 			translatedText, err = t.translateLine(currentLine)
 			if err != nil {
@@ -68,50 +93,50 @@ func (t *Translator) TranslateText() error {
 	return nil
 }
 
-var regexPattern *regexp.Regexp
-
 func (t *Translator) translateLine(text string) (string, error) {
 	translatedText := text
 
-	for _, translationConfig := range t.config.Translations {
-		if regexPattern == nil {
-			var err error
-			regexPattern, err = regexp.Compile(translationConfig.Pattern)
-			if err != nil {
-				return "", err
-			}
+	// Check include condition
+	if t.includeRegex != nil && !t.includeRegex.MatchString(text) {
+		fmt.Println("skipping line (not include):", text)
+		return translatedText, nil
+	}
+
+	// Check exclude condition
+	if t.excludeRegex != nil && t.excludeRegex.MatchString(text) {
+		fmt.Println("skipping line (exclude):", text)
+		return translatedText, nil
+	}
+
+	matches := t.regexPattern.FindAllStringSubmatchIndex(translatedText, -1)
+	if matches == nil {
+		return translatedText, nil
+	}
+
+	for _, match := range matches {
+		original := translatedText[match[0]:match[1]]
+		translatedParts := make([]string, len(match)/2)
+
+		for i := 0; i < len(match)/2; i++ {
+			translatedParts[i] = translatedText[match[2*i]:match[2*i+1]]
 		}
 
-		matches := regexPattern.FindAllStringSubmatchIndex(translatedText, -1)
-		if matches == nil {
-			continue
-		}
-
-		for _, match := range matches {
-			original := translatedText[match[0]:match[1]]
-			translatedParts := make([]string, len(match)/2)
-
-			for i := 0; i < len(match)/2; i++ {
-				translatedParts[i] = translatedText[match[2*i]:match[2*i+1]]
-			}
-
-			for _, groupIndex := range translationConfig.TranslateGroups {
-				if groupIndex < len(translatedParts) {
-					translatedFragment, err := t.translateFragment(translatedParts[groupIndex])
-					if err != nil {
-						return "", err
-					}
-					translatedParts[groupIndex] = translatedFragment
+		for _, groupIndex := range t.config.TranslationConfig.TranslateGroups {
+			if groupIndex < len(translatedParts) {
+				translatedFragment, err := t.translateFragment(translatedParts[groupIndex])
+				if err != nil {
+					return "", err
 				}
+				translatedParts[groupIndex] = translatedFragment
 			}
-
-			translatedPair := original
-			for i, part := range translatedParts {
-				translatedPair = strings.Replace(translatedPair, translatedText[match[2*i]:match[2*i+1]], part, 1)
-			}
-
-			translatedText = strings.Replace(translatedText, original, translatedPair, 1)
 		}
+
+		translatedPair := original
+		for i, part := range translatedParts {
+			translatedPair = strings.Replace(translatedPair, translatedText[match[2*i]:match[2*i+1]], part, 1)
+		}
+
+		translatedText = strings.Replace(translatedText, original, translatedPair, 1)
 	}
 
 	return translatedText, nil
