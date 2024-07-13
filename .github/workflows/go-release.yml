@@ -11,8 +11,8 @@ jobs:
 
     strategy:
       matrix:
-        go-version: ['1.22.3']
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        go-version: ['1.18']
+        os: [linux, windows, darwin]
 
     steps:
       - name: Checkout code
@@ -42,8 +42,20 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
-          name: translator-${{ matrix.os }}
-          path: ./build
+          name: translator-linux
+          path: ./build/linux
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: translator-windows
+          path: ./build/windows
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: translator-darwin
+          path: ./build/darwin
 
       - name: Create Release
         id: create_release
@@ -56,12 +68,32 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Upload Release Asset
+      - name: Upload Release Asset (Linux)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build
-          asset_name: translator-${{ matrix.os }}-${{ github.ref }}
+          asset_path: ./build/linux/translator
+          asset_name: translator-linux-${{ github.ref }}
+          asset_content_type: application/octet-stream
+
+      - name: Upload Release Asset (Windows)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./build/windows/translator.exe
+          asset_name: translator-windows-${{ github.ref }}.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload Release Asset (Darwin)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./build/darwin/translator
+          asset_name: translator-darwin-${{ github.ref }}
           asset_content_type: application/octet-stream
