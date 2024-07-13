@@ -29,7 +29,7 @@ Example `config.json` file:
     "TargetLang": "en",
     "InputFilePath": "input.txt",
     "OutputFilePath": "output.txt",
-    "Translations": {
+    "TranslationConfig": {
         "Pattern": "bon par\\.(.*)",
         "TranslateGroups": [1],
         "IncludeCondition": ".*",
@@ -47,7 +47,7 @@ Example `config.json` file:
 - `TargetLang`: Target language.
 - `InputFilePath`: Path to the input file.
 - `OutputFilePath`: Path to the output file.
-- `Translations`: List of translation configurations.
+- `TranslationConfig`: List of translation configurations.
     - `Pattern`: Regular expression pattern to match text segments.
     - `TranslateGroups`: List of capture group indices that should be translated.
     - `IncludeCondition`: Regular expression to specify lines that should be translated.
@@ -94,20 +94,18 @@ Ceci est un test.
 Monde entier.
 ```
 
-### Regex-based Segment Translation
+### Regex-based Segment Translation(Optional)
 
 You can define which parts of the text should be translated using regular expressions in the `config.json` file. For example, the following configuration:
 
 ```json
 {
-    "Translations": [
-        {
-            "Pattern": "(Bonjour|Comment ça va?)",
-            "TranslateGroups": [1],
-            "IncludeCondition": ".*",
-            "ExcludeCondition": ".*Monde.*"
-        }
-    ]
+    "TranslationConfig": {
+        "Pattern": "bon par\\.(.*)",
+        "TranslateGroups": [1],
+        "IncludeCondition": ".*",
+        "ExcludeCondition": ".*Monde.*"
+    }
 }
 ```
 
