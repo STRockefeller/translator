@@ -1,0 +1,67 @@
+name: Go Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        go-version: ['1.22.3']
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Build
+        run: |
+          mkdir -p build/${{ matrix.os }}
+          GOOS=${{ matrix.os }} GOARCH=amd64 go build -o build/${{ matrix.os }}/translator
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: translator-${{ matrix.os }}
+          path: build/${{ matrix.os }}/translator
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: translator-${{ matrix.os }}
+          path: ./build
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./build
+          asset_name: translator-${{ matrix.os }}-${{ github.ref }}
+          asset_content_type: application/octet-stream
