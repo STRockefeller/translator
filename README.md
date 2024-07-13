@@ -1,5 +1,14 @@
 # Translation Tool
 
+[![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/STRockefeller/translator)](https://github.com/STRockefeller/translator)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/STRockefeller/translator)](https://github.com/STRockefeller/translator/releases)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/STRockefeller/translator/go.yml)](https://github.com/STRockefeller/translator/actions)
+[![GitHub Super-Linter](https://github.com/STRockefeller/translator/workflows/Lint%20Code%20Base/badge.svg)](https://github.com/marketplace/actions/super-linter)
+[![GitHub](https://img.shields.io/github/license/STRockefeller/translator)](https://github.com/STRockefeller/translator/blob/main/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/STRockefeller/translator)](https://goreportcard.com/report/github.com/STRockefeller/translator)
+[![Coverage Status](https://coveralls.io/repos/github/STRockefeller/translator/badge.svg?branch=main)](https://coveralls.io/github/STRockefeller/translator?branch=main)
+[![GoDoc](https://godoc.org/github.com/STRockefeller/translator?status.svg)](https://pkg.go.dev/github.com/STRockefeller/translator)
+
 This tool uses multiple translation APIs (including DeepL and NiuTrans) to translate text between various languages. It supports progress saving to allow resuming translation after interruptions.
 
 ## Features
