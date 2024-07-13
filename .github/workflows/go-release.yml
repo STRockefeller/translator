@@ -23,35 +23,42 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
+      - name: Install dependencies
+        run: go mod download
+
       - name: Build
         run: |
           mkdir -p build/${{ matrix.os }}
-          GOOS=${{ matrix.os }} GOARCH=amd64 go build -o build/${{ matrix.os }}/translator
+          if [ "${{ matrix.os }}" == "windows" ]; then
+            GOOS=${{ matrix.os }} GOARCH=amd64 go build -o build/${{ matrix.os }}/translator.exe
+          else
+            GOOS=${{ matrix.os }} GOARCH=amd64 go build -o build/${{ matrix.os }}/translator
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: translator-${{ matrix.os }}
-          path: build/${{ matrix.os }}/translator
+          path: build/${{ matrix.os }}/
 
   release:
     needs: build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download artifacts
+      - name: Download artifacts (Linux)
         uses: actions/download-artifact@v3
         with:
           name: translator-linux
           path: ./build/linux
 
-      - name: Download artifacts
+      - name: Download artifacts (Windows)
         uses: actions/download-artifact@v3
         with:
           name: translator-windows
           path: ./build/windows
 
-      - name: Download artifacts
+      - name: Download artifacts (Darwin)
         uses: actions/download-artifact@v3
         with:
           name: translator-darwin
